@@ -5,7 +5,7 @@
 
 // RFC-5322 simplified. We intentionally require a TLD of 2+ chars.
 const EMAIL_RE =
-  /(?:^|[\s<>"'(),;:])([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})(?=$|[\s<>"'(),;:?!])/g;
+  /(?:^|[\s<>"'(),;:])([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})(?=$|[\s<>"'(),;:?!.])/g;
 
 // Addresses we never want to surface — they're not real human inboxes.
 const BLOCKED_LOCAL_PARTS = new Set([

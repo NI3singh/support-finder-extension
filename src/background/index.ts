@@ -72,7 +72,23 @@ async function discover(tabId: number, pageUrl: string): Promise<PopupResponse> 
   return { ok: true, result };
 }
 
-function requestScan(tabId: number): Promise<ContentResponse> {
+async function requestScan(tabId: number): Promise<ContentResponse> {
+  const first = await sendScan(tabId);
+  if (first.ok) return first;
+
+  // A connection error means the content script isn't running in this tab —
+  // typically because the tab was already open before the extension was
+  // installed or reloaded. Inject it on demand and retry once. Genuine scan
+  // failures (the content script replied with an error) are returned as-is.
+  if (!isConnectionError(first.error)) return first;
+
+  const injected = await injectContentScript(tabId);
+  if (!injected.ok) return { ok: false, error: injected.error };
+
+  return sendScan(tabId);
+}
+
+function sendScan(tabId: number): Promise<ContentResponse> {
   const req: ContentRequest = { kind: 'scan' };
   return new Promise((resolve) => {
     try {
@@ -93,4 +109,32 @@ function requestScan(tabId: number): Promise<ContentResponse> {
       });
     }
   });
+}
+
+async function injectContentScript(
+  tabId: number,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const files = chrome.runtime.getManifest().content_scripts?.[0]?.js ?? [];
+  if (files.length === 0) {
+    return { ok: false, error: 'No content script registered to inject.' };
+  }
+  try {
+    await chrome.scripting.executeScript({ target: { tabId }, files });
+    return { ok: true };
+  } catch (err) {
+    return {
+      ok: false,
+      error:
+        err instanceof Error
+          ? `Couldn't access this page (${err.message}).`
+          : "Couldn't access this page.",
+    };
+  }
+}
+
+function isConnectionError(error?: string): boolean {
+  if (!error) return false;
+  return /receiving end does not exist|could not establish connection|message channel closed/i.test(
+    error,
+  );
 }
