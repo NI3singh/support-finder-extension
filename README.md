@@ -9,11 +9,6 @@ you're currently visiting, with the least possible navigation. It detects
 the active tab, scans for support signals, probes the most likely public
 support routes on the same domain, and ranks the results by confidence.
 
-> **Honest framing.** This is a **best-effort public support discovery
-> tool**, not a magical universal email finder. If a site doesn't expose
-> public support information, the extension will say so clearly rather
-> than fabricate a result.
-
 ---
 
 ## What it finds
