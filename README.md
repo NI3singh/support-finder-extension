@@ -99,8 +99,8 @@ up to five alternatives are listed below.
 ## Install (development)
 
 ```bash
-cd apps/extension
-yarn install        # or npm install / pnpm install
+corepack enable     # one-time: activates the pinned Yarn 4
+yarn install
 yarn build          # produces ./dist
 ```
 
@@ -109,12 +109,12 @@ Then in Chrome:
 1. Visit `chrome://extensions`
 2. Toggle **Developer mode** (top-right)
 3. Click **Load unpacked**
-4. Select the `apps/extension/dist` directory
+4. Select the `dist` directory
 
 The extension icon will appear in the toolbar. Open any website and
 click the icon to scan.
 
-> Before publishing, drop real icons into `apps/extension/icons/`
+> Before publishing, drop real icons into `icons/`
 > (see `icons/README.md`).
 
 ### Scripts
@@ -131,7 +131,7 @@ yarn test         # vitest run
 ## Project structure
 
 ```
-apps/extension/
+support_finder/
 ├── manifest.json              # MV3 manifest
 ├── popup.html                 # popup entry HTML
 ├── vite.config.ts             # @crxjs/vite-plugin build
