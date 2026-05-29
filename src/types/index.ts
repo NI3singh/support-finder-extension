@@ -32,6 +32,12 @@ export interface PageScanResult {
   title: string;
   /** Visible page text, truncated. */
   text: string;
+  /**
+   * Full DOM text content (excluding script/style), truncated. Catches emails
+   * that exist in the DOM but aren't in the rendered `text` — e.g. sections that
+   * are visually hidden, animated-in, or split across inline elements.
+   */
+  deepText?: string;
   /** Footer text only, truncated. */
   footerText: string;
   /** All mailto: addresses found on the page. */

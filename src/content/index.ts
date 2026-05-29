@@ -9,6 +9,7 @@
 import type { ContentRequest, ContentResponse, PageScanResult } from '@/types';
 
 const MAX_TEXT = 50_000;
+const MAX_DEEP_TEXT = 100_000;
 const MAX_FOOTER_TEXT = 8_000;
 const MAX_LINKS = 400;
 
@@ -44,6 +45,9 @@ function scanPage(): PageScanResult {
   // Visible body text — innerText respects CSS visibility better than textContent.
   const text = (document.body?.innerText || '').slice(0, MAX_TEXT);
 
+  // Full DOM text — catches emails in the DOM that innerText skips.
+  const deepText = collectDeepText();
+
   const mailtos = collectMailtos();
   const links = collectLinks(footerEl);
   const contactPoints = collectContactPoints();
@@ -54,12 +58,26 @@ function scanPage(): PageScanResult {
     hostname,
     title,
     text,
+    deepText,
     footerText,
     mailtos,
     links,
     contactPoints,
     description,
   };
+}
+
+/**
+ * Text content of the whole body, excluding script/style/noscript/template.
+ * Unlike innerText this includes hidden / not-yet-animated-in nodes, and it
+ * concatenates inline fragments so addresses split across <span>s survive.
+ */
+function collectDeepText(): string {
+  const body = document.body;
+  if (!body) return '';
+  const clone = body.cloneNode(true) as HTMLElement;
+  clone.querySelectorAll('script, style, noscript, template').forEach((el) => el.remove());
+  return (clone.textContent || '').replace(/\s+/g, ' ').trim().slice(0, MAX_DEEP_TEXT);
 }
 
 function pickFooter(): HTMLElement | null {

@@ -106,6 +106,8 @@ function collectFromMailtos(scan: PageScanResult, add: (c: SupportCandidate) => 
 }
 
 function collectFromLinks(scan: PageScanResult, add: (c: SupportCandidate) => void): void {
+  const pagePath = pageBaseUrl(scan.url, scan.origin);
+
   for (const link of scan.links) {
     const text = (link.text || '').trim();
     const href = link.href;
@@ -127,16 +129,23 @@ function collectFromLinks(scan: PageScanResult, add: (c: SupportCandidate) => vo
     const sameDomain = sameRegistrableDomain(url.hostname, scan.hostname);
     const type = inferTypeFromUrl(url.href);
 
+    // A "#contact"-style link that just scrolls to a section on the current
+    // page isn't a real destination — the actual contact info lives in that
+    // section (which we mine via deepText/mailtos). Keep it only as a low-
+    // priority fallback so a real extracted email always ranks above it.
+    const samePageAnchor = !!url.hash && url.origin + url.pathname === pagePath;
+
     add(
       scoreCandidate({
         value: url.href,
         type: type === 'unknown' ? 'support_page' : type,
-        label: text || url.href,
+        label: samePageAnchor && text ? `${text} (section on this page)` : text || url.href,
         source: 'page',
         inFooter: link.inFooter,
         textKeyword: keyword,
         sameDomain,
         pathHintWeight: pathHint,
+        samePageAnchor,
       })
     );
   }
@@ -144,20 +153,24 @@ function collectFromLinks(scan: PageScanResult, add: (c: SupportCandidate) => vo
 
 function collectFromBodyText(scan: PageScanResult, add: (c: SupportCandidate) => void): void {
   const seen = new Set<string>();
-  for (const email of extractEmails(scan.text)) {
-    if (seen.has(email)) continue;
-    seen.add(email);
-    add(
-      scoreCandidate({
-        value: email,
-        type: 'email',
-        label: email,
-        source: 'page',
-        pageHost: scan.hostname,
-        inFooter: scan.footerText.toLowerCase().includes(email),
-        sameDomain: true,
-      })
-    );
+  // Scan visible text and the full DOM text (catches hidden / animated-in
+  // sections and addresses split across inline elements).
+  for (const src of [scan.text, scan.deepText ?? '']) {
+    for (const email of extractEmails(src)) {
+      if (seen.has(email)) continue;
+      seen.add(email);
+      add(
+        scoreCandidate({
+          value: email,
+          type: 'email',
+          label: email,
+          source: 'page',
+          pageHost: scan.hostname,
+          inFooter: scan.footerText.toLowerCase().includes(email),
+          sameDomain: true,
+        })
+      );
+    }
   }
 }
 
@@ -341,6 +354,16 @@ function safeUrl(href: string, base: string): URL | null {
     return new URL(href, base);
   } catch {
     return null;
+  }
+}
+
+/** Origin + pathname of the current page (no hash/query) for anchor comparison. */
+function pageBaseUrl(pageUrl: string, fallbackOrigin: string): string {
+  try {
+    const u = new URL(pageUrl);
+    return u.origin + u.pathname;
+  } catch {
+    return fallbackOrigin;
   }
 }
 

@@ -32,6 +32,8 @@ interface ScoreInputs {
   probeOk?: boolean;
   /** Whether the probed page contains support keywords in title/body. */
   probeHasSupportContent?: boolean;
+  /** Whether this is a same-page "#section" anchor (scroll-only, not a route). */
+  samePageAnchor?: boolean;
 }
 
 const TYPE_BASE: Record<SupportType, number> = {
@@ -79,6 +81,12 @@ export function scoreCandidate(input: ScoreInputs): SupportCandidate {
   if (input.probeHasSupportContent) {
     score += 0.1;
     reasons.push('support content');
+  }
+
+  // A scroll-only same-page anchor is a weak fallback, not a real destination.
+  if (input.samePageAnchor) {
+    score -= 0.2;
+    reasons.push('same-page section');
   }
 
   // Email-specific boost based on local-part heuristics.

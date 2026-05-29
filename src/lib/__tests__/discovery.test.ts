@@ -75,6 +75,25 @@ describe('buildDiscoveryResult', () => {
     expect(result.best?.value).toBe('help@acme.com');
   });
 
+  it('extracts an email from deepText and ranks it above a same-page #anchor', async () => {
+    const result = await buildDiscoveryResult({
+      scan: mockScan({
+        url: 'https://portfolio.example/',
+        origin: 'https://portfolio.example',
+        hostname: 'portfolio.example',
+        text: 'Home About Projects', // contact section not in rendered innerText
+        deepText: 'Get in touch: nitin@gmail.com',
+        links: [{ href: 'https://portfolio.example/#contact', text: 'Contact', inFooter: false }],
+      }),
+      probe: false,
+    });
+    expect(result.best?.type).toBe('email');
+    expect(result.best?.value).toBe('nitin@gmail.com');
+    // The #contact anchor is still surfaced, just ranked lower.
+    const anchor = result.alternatives.find((c) => c.value.includes('#contact'));
+    expect(anchor).toBeDefined();
+  });
+
   it('deduplicates the same email from multiple sources', async () => {
     const result = await buildDiscoveryResult({
       scan: mockScan({
