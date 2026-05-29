@@ -220,6 +220,3 @@ state — **never** a fabricated address.
 
 ---
 
-## License
-
-MIT — see `LICENSE` (add your own when shipping).
