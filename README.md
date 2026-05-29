@@ -1,4 +1,8 @@
-# Support Finder — Chrome Extension
+<p align="center">
+  <img src="support_finder_icon_original.png" alt="Support Finder logo" width="128" height="128" />
+</p>
+
+<h1 align="center">Support Finder — Chrome Extension</h1>
 
 A Chrome extension that helps you contact the support team of the website
 you're currently visiting, with the least possible navigation. It detects
